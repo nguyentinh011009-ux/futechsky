@@ -265,20 +265,34 @@
                             </select>
                         </div>
 
-                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
-                            <span class="font-bold text-slate-700 block text-[11px]">Số Lượng Ghế Theo Hạng (Nhập 0 nếu không có)</span>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-amber-600 font-bold">First (F)</label><input id="cfg-f" type="number" min="0" value="0" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1.5 rounded text-center font-bold"></div>
-                                <div><label class="text-purple-600 font-bold">Business (C)</label><input id="cfg-c" type="number" min="0" value="12" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1.5 rounded text-center font-bold"></div>
-                                <div><label class="text-teal-600 font-bold">Prem Eco (W)</label><input id="cfg-w" type="number" min="0" value="0" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1.5 rounded text-center font-bold"></div>
-                                <div><label class="text-blue-600 font-bold">Economy (Y)</label><input id="cfg-y" type="number" min="0" value="180" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1.5 rounded text-center font-bold"></div>
-                            </div>
-                        </div>
+<!-- Cấu hình riêng cho từng Hạng Ghế -->
+<div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-3">
+    <span class="font-bold text-slate-700 block text-[11px] border-b pb-1">Chi Tiết Hạng Ghế & Cấu Hình Hàng (Nhập 0 nếu không có)</span>
+    
+    <!-- Hạng First (F) -->
+    <div class="grid grid-cols-2 gap-2 items-center">
+        <div><label class="text-amber-600 font-bold block text-[11px]">First (F) - Số ghế</label><input id="cfg-f" type="number" min="0" value="0" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1 rounded text-center font-bold"></div>
+        <div><label class="text-slate-500 block text-[10px]">Cấu hình (VD: 1-1 / 1-2-1)</label><input id="cfg-layout-f" type="text" value="1-1" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1 rounded text-center font-mono"></div>
+    </div>
 
-                        <div>
-                            <label class="font-semibold text-slate-700 mb-1 block">Cấu hình hàng ghế (Ví dụ: 3-3 hoặc 2-2 cho Thân hẹp, 3-3-3 cho Thân rộng)</label>
-                            <input id="cfg-layout-str" type="text" value="3-3" oninput="updateVisualizerPreview()" placeholder="VD: 3-3 hoặc 2-2" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono text-center font-bold">
-                        </div>
+    <!-- Hạng Business (C) -->
+    <div class="grid grid-cols-2 gap-2 items-center">
+        <div><label class="text-purple-600 font-bold block text-[11px]">Business (C) - Số ghế</label><input id="cfg-c" type="number" min="0" value="12" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1 rounded text-center font-bold"></div>
+        <div><label class="text-slate-500 block text-[10px]">Cấu hình (VD: 2-2 / 1-2-1)</label><input id="cfg-layout-c" type="text" value="2-2" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1 rounded text-center font-mono"></div>
+    </div>
+
+    <!-- Hạng Premium Eco (W) -->
+    <div class="grid grid-cols-2 gap-2 items-center">
+        <div><label class="text-teal-600 font-bold block text-[11px]">Prem Eco (W) - Số ghế</label><input id="cfg-w" type="number" min="0" value="0" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1 rounded text-center font-bold"></div>
+        <div><label class="text-slate-500 block text-[10px]">Cấu hình (VD: 2-3-2 / 2-2)</label><input id="cfg-layout-w" type="text" value="2-3-2" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1 rounded text-center font-mono"></div>
+    </div>
+
+    <!-- Hạng Economy (Y) -->
+    <div class="grid grid-cols-2 gap-2 items-center">
+        <div><label class="text-blue-600 font-bold block text-[11px]">Economy (Y) - Số ghế</label><input id="cfg-y" type="number" min="0" value="180" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1 rounded text-center font-bold"></div>
+        <div><label class="text-slate-500 block text-[10px]">Cấu hình (VD: 3-3 / 3-3-3)</label><input id="cfg-layout-y" type="text" value="3-3" oninput="updateVisualizerPreview()" class="w-full bg-white border border-slate-300 p-1 rounded text-center font-mono"></div>
+    </div>
+</div>
 
                         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-lg font-bold text-sm shadow-sm transition">
                             <i class="fa-solid fa-plus-circle mr-1"></i> Lưu Cấu Hình Ghế
@@ -445,21 +459,25 @@
 
         // Form Add Aircraft Seat Config
         document.getElementById('form-config').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = "CFG_" + Date.now();
-            await setDoc(doc(db, "seat_configs", id), {
-                name: document.getElementById('cfg-name').value,
-                planeType: document.getElementById('cfg-plane-type').value,
-                fSeats: Number(document.getElementById('cfg-f').value),
-                cSeats: Number(document.getElementById('cfg-c').value),
-                wSeats: Number(document.getElementById('cfg-w').value),
-                ySeats: Number(document.getElementById('cfg-y').value),
-                layoutStr: document.getElementById('cfg-layout-str').value
-            });
-            alert("Đã lưu sơ đồ cấu hình ghế mới thành công!");
-            document.getElementById('form-config').reset();
-            updateVisualizerPreview();
-        };
+    e.preventDefault();
+    const id = "CFG_" + Date.now();
+    await setDoc(doc(db, "seat_configs", id), {
+        name: document.getElementById('cfg-name').value,
+        planeType: document.getElementById('cfg-plane-type').value,
+        fSeats: Number(document.getElementById('cfg-f').value),
+        cSeats: Number(document.getElementById('cfg-c').value),
+        wSeats: Number(document.getElementById('cfg-w').value),
+        ySeats: Number(document.getElementById('cfg-y').value),
+        // Lưu cấu hình từng hạng ghế riêng biệt
+        layoutF: document.getElementById('cfg-layout-f').value || '1-1',
+        layoutC: document.getElementById('cfg-layout-c').value || '2-2',
+        layoutW: document.getElementById('cfg-layout-w').value || '2-3-2',
+        layoutY: document.getElementById('cfg-layout-y').value || '3-3'
+    });
+    alert("Đã lưu sơ đồ cấu hình ghế mới thành công!");
+    document.getElementById('form-config').reset();
+    updateVisualizerPreview();
+};
 
         window.deleteConfig = async (id) => {
             if(confirm("Bạn có chắc chắn muốn xóa cấu hình ghế này?")) {
@@ -468,57 +486,62 @@
         };
 
         // Aircraft Seat Visualizer Engine (1.2 Engine)
-        window.updateVisualizerPreview = function() {
-            const planeType = document.getElementById('cfg-plane-type').value;
-            const fSeats = Number(document.getElementById('cfg-f').value);
-            const cSeats = Number(document.getElementById('cfg-c').value);
-            const wSeats = Number(document.getElementById('cfg-w').value);
-            const ySeats = Number(document.getElementById('cfg-y').value);
-            const layoutStr = document.getElementById('cfg-layout-str').value || "3-3";
-            
-            const isWideBody = (planeType === 'A339' || planeType === 'A35K');
-            const canvas = document.getElementById('plane-canvas');
+window.updateVisualizerPreview = function() {
+    const planeType = document.getElementById('cfg-plane-type').value;
+    const fSeats = Number(document.getElementById('cfg-f').value);
+    const cSeats = Number(document.getElementById('cfg-c').value);
+    const wSeats = Number(document.getElementById('cfg-w').value);
+    const ySeats = Number(document.getElementById('cfg-y').value);
 
-            let html = `<div class="text-[10px] text-slate-400 font-bold mb-3 tracking-widest uppercase text-center border-b pb-1 w-full"><i class="fa-solid fa-plane"></i> Buồng Lái (Cockpit)</div>`;
+    // Lấy cấu hình riêng từng hạng
+    const layoutF = document.getElementById('cfg-layout-f').value || "1-1";
+    const layoutC = document.getElementById('cfg-layout-c').value || "2-2";
+    const layoutW = document.getElementById('cfg-layout-w').value || "2-3-2";
+    const layoutY = document.getElementById('cfg-layout-y').value || "3-3";
+    
+    const isWideBody = (planeType === 'A339' || planeType === 'A35K');
+    const canvas = document.getElementById('plane-canvas');
 
-            // Function generator for seating sections
-            const generateSeatsHTML = (count, seatClass, classLabel) => {
-                if (count <= 0) return '';
-                let sectionHTML = `<div class="w-full text-center text-[9px] font-bold text-slate-400 mt-2 mb-1 border-t pt-1 uppercase">${classLabel} (${count} ghế)</div>`;
-                
-                // Seat columns logic
-                const parts = layoutStr.split('-').map(Number);
-                const seatsPerRow = parts.reduce((a, b) => a + b, 0) || (isWideBody ? 9 : 6);
-                const totalRows = Math.ceil(count / seatsPerRow);
+    let html = `<div class="text-[10px] text-slate-400 font-bold mb-3 tracking-widest uppercase text-center border-b pb-1 w-full"><i class="fa-solid fa-plane"></i> Buồng Lái (Cockpit)</div>`;
 
-                let seatCounter = 0;
-                for (let r = 1; r <= totalRows; r++) {
-                    sectionHTML += `<div class="flex items-center justify-center gap-1.5 mb-1">`;
-                    parts.forEach((colCount, colIdx) => {
-                        sectionHTML += `<div class="flex gap-1">`;
-                        for (let c = 0; c < colCount; c++) {
-                            seatCounter++;
-                            if (seatCounter <= count) {
-                                sectionHTML += `<div class="w-4 h-4 rounded-sm seat-${seatClass} text-[8px] flex items-center justify-center font-bold shadow-xs">${seatCounter}</div>`;
-                            }
-                        }
-                        sectionHTML += `</div>`;
-                        if (colIdx < parts.length - 1) {
-                            sectionHTML += `<div class="w-2"></div>`; // Lối đi (Aisle)
-                        }
-                    });
-                    sectionHTML += `</div>`;
+    // Hàm vẽ từng khu vực ghế theo cấu hình riêng
+    const generateSeatsHTML = (count, seatClass, classLabel, layoutStr) => {
+        if (count <= 0) return '';
+        let sectionHTML = `<div class="w-full text-center text-[9px] font-bold text-slate-400 mt-2 mb-1 border-t pt-1 uppercase">${classLabel} (${count} ghế - sơ đồ ${layoutStr})</div>`;
+        
+        const parts = layoutStr.split('-').map(Number);
+        const seatsPerRow = parts.reduce((a, b) => a + b, 0) || (isWideBody ? 9 : 6);
+        const totalRows = Math.ceil(count / seatsPerRow);
+
+        let seatCounter = 0;
+        for (let r = 1; r <= totalRows; r++) {
+            sectionHTML += `<div class="flex items-center justify-center gap-1.5 mb-1">`;
+            parts.forEach((colCount, colIdx) => {
+                sectionHTML += `<div class="flex gap-1">`;
+                for (let c = 0; c < colCount; c++) {
+                    seatCounter++;
+                    if (seatCounter <= count) {
+                        sectionHTML += `<div class="w-4 h-4 rounded-sm seat-${seatClass} text-[8px] flex items-center justify-center font-bold shadow-xs">${seatCounter}</div>`;
+                    }
                 }
-                return sectionHTML;
-            };
+                sectionHTML += `</div>`;
+                if (colIdx < parts.length - 1) {
+                    sectionHTML += `<div class="w-2"></div>`; // Lối đi
+                }
+            });
+            sectionHTML += `</div>`;
+        }
+        return sectionHTML;
+    };
 
-            html += generateSeatsHTML(fSeats, 'f', 'First Class');
-            html += generateSeatsHTML(cSeats, 'c', 'Business Class');
-            html += generateSeatsHTML(wSeats, 'w', 'Premium Economy');
-            html += generateSeatsHTML(ySeats, 'y', 'Economy Class');
+    // Vẽ từng hạng ghế với cấu hình tương ứng
+    html += generateSeatsHTML(fSeats, 'f', 'First Class', layoutF);
+    html += generateSeatsHTML(cSeats, 'c', 'Business Class', layoutC);
+    html += generateSeatsHTML(wSeats, 'w', 'Premium Economy', layoutW);
+    html += generateSeatsHTML(ySeats, 'y', 'Economy Class', layoutY);
 
-            canvas.innerHTML = html;
-        };
+    canvas.innerHTML = html;
+};
 
         // Sync Realtime Flights List (1.1)
         onSnapshot(collection(db, "flights"), (snapshot) => {
