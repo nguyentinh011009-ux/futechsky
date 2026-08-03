@@ -321,6 +321,15 @@
 
     <!-- Logic Script Execution Module -->
     <script type="module">
+        // Lắng nghe danh sách Cấu hình ghế Realtime từ Admin
+if (isFirebaseAvailable) {
+    try {
+        onSnapshot(collection(db, "seat_configs"), (snap) => {
+            seatConfigs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderSeatMatrix(); // Tự động vẽ lại sơ đồ ghế khi Admin có thay đổi
+        });
+    } catch(e) { console.error(e); }
+}
         // Import Firebase với trường hợp try-catch an toàn
         let db, doc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where;
         let isFirebaseAvailable = false;
@@ -447,39 +456,115 @@
             renderSeatMatrix();
         }
 
-        function renderSeatMatrix() {
-            const matrixContainer = document.getElementById('seat-matrix');
-            let html = `<div class="grid grid-cols-6 gap-2 w-full max-w-xs">`;
+// Hàm vẽ Sơ Đồ Ghế Động theo Cấu Hình từ Admin
+function renderSeatMatrix() {
+    const matrixContainer = document.getElementById('seat-matrix');
+    const flightId = document.getElementById('pax-flight').value;
+    const flight = flightsList.find(f => f.id === flightId);
 
-            for (let i = 1; i <= 30; i++) {
-                const seatNum = `${i}A`;
-                const isOccupied = checkedInSeats.includes(seatNum);
+    if (!flight) {
+        matrixContainer.innerHTML = '<p class="text-xs text-slate-400 mt-10">Vui lòng chọn chuyến bay</p>';
+        return;
+    }
 
-                if (isOccupied) {
-                    html += `<button disabled class="seat-btn py-2 bg-rose-500 text-white rounded text-xs font-bold shadow-xs">${seatNum}</button>`;
-                } else {
-                    html += `<button data-seat="${seatNum}" class="seat-btn seat-select-btn py-2 bg-white border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-700 rounded text-xs font-bold shadow-xs">${seatNum}</button>`;
+    // Lấy đúng cấu hình ghế mà Admin đã gắn cho chuyến bay này
+    const config = seatConfigs.find(c => c.id === flight.configId);
+
+    if (!config) {
+        matrixContainer.innerHTML = '<p class="text-xs text-rose-500 mt-10 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Chuyến bay này chưa được Admin gán Sơ đồ ghế!</p>';
+        return;
+    }
+
+    let html = `<div class="w-full space-y-3">`;
+    const letterMap = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K'];
+
+    // Helper sinh nút ghế cho từng hạng ghế
+    const generateSeatsForClass = (count, seatClass, classLabel, layoutStr, startRow) => {
+        if (!count || count <= 0) return { html: '', nextRow: startRow };
+
+        const parts = (layoutStr || "3-3").split('-').map(Number);
+        const seatsPerRow = parts.reduce((a, b) => a + b, 0);
+        const totalRows = Math.ceil(count / seatsPerRow);
+
+        let classHtml = `
+            <div class="text-[10px] font-bold text-slate-500 border-b pb-1 uppercase flex justify-between items-center mt-2">
+                <span>${classLabel}</span>
+                <span class="text-[9px] bg-slate-200 px-1.5 py-0.5 rounded text-slate-600">${count} ghế (${layoutStr})</span>
+            </div>
+        `;
+
+        let seatCounter = 0;
+        let currentRow = startRow;
+
+        for (let r = 0; r < totalRows; r++) {
+            classHtml += `<div class="flex items-center justify-center gap-1.5 my-1">`;
+            let seatIndexInRow = 0;
+
+            parts.forEach((colCount, colIdx) => {
+                classHtml += `<div class="flex gap-1">`;
+                for (let c = 0; c < colCount; c++) {
+                    seatCounter++;
+                    if (seatCounter <= count) {
+                        const seatLetter = letterMap[seatIndexInRow] || 'X';
+                        const seatNum = `${currentRow}${seatLetter}`;
+                        const isOccupied = checkedInSeats.includes(seatNum);
+
+                        if (isOccupied) {
+                            classHtml += `<button disabled title="Đã check-in" class="w-7 h-7 bg-rose-500 text-white rounded text-[10px] font-bold shadow-xs cursor-not-allowed opacity-50">${seatNum}</button>`;
+                        } else {
+                            classHtml += `<button data-seat="${seatNum}" class="seat-select-btn w-7 h-7 bg-white border border-slate-300 hover:border-indigo-600 hover:bg-indigo-50 text-slate-700 rounded text-[10px] font-bold shadow-xs transition">${seatNum}</button>`;
+                        }
+                        seatIndexInRow++;
+                    }
                 }
-            }
-
-            html += `</div>`;
-            matrixContainer.innerHTML = html;
-
-            // Bind click events to seat buttons
-            document.querySelectorAll('.seat-select-btn').forEach(btn => {
-                btn.onclick = () => {
-                    document.querySelectorAll('.seat-select-btn').forEach(b => {
-                        b.className = "seat-btn seat-select-btn py-2 bg-white border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-700 rounded text-xs font-bold shadow-xs";
-                    });
-                    btn.className = "seat-btn seat-select-btn py-2 bg-indigo-600 text-white rounded text-xs font-bold shadow-md ring-2 ring-indigo-300";
-                    selectedSeatNumber = btn.getAttribute('data-seat');
-
-                    const badge = document.getElementById('selected-seat-badge');
-                    badge.innerText = `Ghế đã chọn: ${selectedSeatNumber}`;
-                    badge.className = "bg-emerald-100 text-emerald-800 font-extrabold text-xs px-2.5 py-1 rounded-md border border-emerald-300";
-                };
+                classHtml += `</div>`;
+                if (colIdx < parts.length - 1) {
+                    classHtml += `<div class="w-2"></div>`; // Tạo Lối đi giữa các dãy
+                }
             });
+            classHtml += `</div>`;
+            currentRow++;
         }
+
+        return { html: classHtml, nextRow: currentRow };
+    };
+
+    let currentRow = 1;
+
+    // 1. Hạng First Class (F)
+    const fRes = generateSeatsForClass(config.fSeats, 'f', 'First Class (F)', config.layoutF, currentRow);
+    html += fRes.html; currentRow = fRes.nextRow;
+
+    // 2. Hạng Business Class (C)
+    const cRes = generateSeatsForClass(config.cSeats, 'c', 'Business Class (C)', config.layoutC, currentRow);
+    html += cRes.html; currentRow = cRes.nextRow;
+
+    // 3. Hạng Premium Economy (W)
+    const wRes = generateSeatsForClass(config.wSeats, 'w', 'Premium Economy (W)', config.layoutW, currentRow);
+    html += wRes.html; currentRow = wRes.nextRow;
+
+    // 4. Hạng Economy Class (Y)
+    const yRes = generateSeatsForClass(config.ySeats, 'y', 'Economy Class (Y)', config.layoutY, currentRow);
+    html += yRes.html; currentRow = yRes.nextRow;
+
+    html += `</div>`;
+    matrixContainer.innerHTML = html;
+
+    // Sự kiện Click chọn ghế
+    document.querySelectorAll('.seat-select-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.seat-select-btn').forEach(b => {
+                b.className = "seat-select-btn w-7 h-7 bg-white border border-slate-300 hover:border-indigo-600 text-slate-700 rounded text-[10px] font-bold shadow-xs";
+            });
+            btn.className = "seat-select-btn w-7 h-7 bg-indigo-600 text-white rounded text-[10px] font-bold shadow-md ring-2 ring-indigo-300";
+            selectedSeatNumber = btn.getAttribute('data-seat');
+
+            const badge = document.getElementById('selected-seat-badge');
+            badge.innerText = `Ghế đã chọn: ${selectedSeatNumber}`;
+            badge.className = "bg-emerald-100 text-emerald-800 font-extrabold text-xs px-2.5 py-1 rounded-md border border-emerald-300";
+        };
+    });
+}
 
         async function generatePairingSession() {
             currentSessionId = "SES_" + Math.random().toString(36).substring(2, 8).toUpperCase();
