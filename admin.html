@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>FUtech Sky - Admin Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .seat-f { background-color: #f59e0b; color: white; }
+        .seat-c { background-color: #8b5cf6; color: white; }
+        .seat-w { background-color: #06b6d4; color: white; }
+        .seat-y { background-color: #3b82f6; color: white; }
+        .plane-body { border-radius: 100px 100px 30px 30px; border: 4px solid #475569; background: #0f172a; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 font-black px-3 py-1 rounded text-xl">FUtech <span class="text-sky-400">SKY</span></div>
+            <span class="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300">Admin Control Suite</span>
+        </div>
+        <div id="auth-box">
+            <button id="btn-login" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded text-sm font-bold"><i class="fa-brands fa-google mr-2"></i>Đăng nhập Firebase</button>
+            <div id="user-profile" class="hidden flex items-center gap-3">
+                <span id="user-email" class="text-sm font-semibold text-sky-400"></span>
+                <button id="btn-logout" class="bg-red-600 px-3 py-1 rounded text-xs">Đăng xuất</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+        <!-- Dashboard Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <p class="text-xs text-slate-400 uppercase font-bold">Tổng Chuyến SGN ⇌ HAN</p>
+                <p class="text-2xl font-bold text-sky-400 mt-1" id="dash-total-flights">12 Chuyến</p>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <p class="text-xs text-slate-400 uppercase font-bold">Hãng FUtech Airways (FU)</p>
+                <p class="text-2xl font-bold text-indigo-400 mt-1">7 Chuyến</p>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <p class="text-xs text-slate-400 uppercase font-bold">Hãng pair (5G)</p>
+                <p class="text-2xl font-bold text-pink-400 mt-1">5 Chuyến</p>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <p class="text-xs text-slate-400 uppercase font-bold">Sơ Đồ Tàu Bay Khai Thác</p>
+                <p class="text-2xl font-bold text-emerald-400 mt-1" id="dash-total-configs">4 Cấu hình</p>
+            </div>
+        </div>
+
+        <!-- Main Content Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Flight Management (1.1) -->
+            <div class="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+                <h2 class="text-lg font-bold border-b border-slate-700 pb-3 flex justify-between items-center">
+                    <span><i class="fa-solid fa-plane-departure mr-2 text-sky-400"></i>1.1 Quản Lý Chuyến Bay (SGN ⇌ HAN)</span>
+                </h2>
+
+                <!-- Form Add Flight -->
+                <form id="form-add-flight" class="grid grid-cols-2 md:grid-cols-3 gap-3 bg-slate-900 p-4 rounded-lg border border-slate-700 text-xs">
+                    <div>
+                        <label class="text-slate-400">Hãng Khai Thác</label>
+                        <select id="fl-airline" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white font-bold">
+                            <option value="FU">FUtech Airways (Mã FU)</option>
+                            <option value="5G">pair (Mã 5G)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-slate-400">Số Hiệu Chiều Đi (VD: FU1588 / 5G202)</label>
+                        <input id="fl-code-out" type="text" placeholder="FU1588" required class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="text-slate-400">Số Hiệu Chiều Về (VD: FU1589 / 5G203)</label>
+                        <input id="fl-code-in" type="text" placeholder="FU1589" required class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="text-slate-400">Cất / Hạ Cánh Chiều Đi</label>
+                        <div class="flex gap-1">
+                            <input id="fl-dep-out" type="time" required class="w-1/2 bg-slate-800 border border-slate-700 rounded p-1">
+                            <input id="fl-arr-out" type="time" required class="w-1/2 bg-slate-800 border border-slate-700 rounded p-1">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-slate-400">Cất / Hạ Cánh Chiều Về</label>
+                        <div class="flex gap-1">
+                            <input id="fl-dep-in" type="time" required class="w-1/2 bg-slate-800 border border-slate-700 rounded p-1">
+                            <input id="fl-arr-in" type="time" required class="w-1/2 bg-slate-800 border border-slate-700 rounded p-1">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-slate-400">Sơ Đồ Ghế Áp Dụng</label>
+                        <select id="fl-config-select" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                            <option value="A21N-STD">A21N (Thân hẹp - 2 dãy)</option>
+                            <option value="A35K-STD">A35K (Thân rộng - 3 dãy)</option>
+                        </select>
+                    </div>
+                    <div class="col-span-3">
+                        <label class="text-slate-400 block mb-1">Ngày Bay Trong Tuần</label>
+                        <div class="flex gap-3">
+                            <label><input type="checkbox" name="days" value="T2" checked> T2</label>
+                            <label><input type="checkbox" name="days" value="T3" checked> T3</label>
+                            <label><input type="checkbox" name="days" value="T4" checked> T4</label>
+                            <label><input type="checkbox" name="days" value="T5" checked> T5</label>
+                            <label><input type="checkbox" name="days" value="T6" checked> T6</label>
+                            <label><input type="checkbox" name="days" value="T7" checked> T7</label>
+                            <label><input type="checkbox" name="days" value="CN" checked> CN</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="col-span-3 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded font-bold text-sm">
+                        <i class="fa-solid fa-plus mr-1"></i> Lưu Chuyến Bay Vào Hệ Thống
+                    </button>
+                </form>
+
+                <!-- List Flights Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase">
+                            <tr>
+                                <th class="p-2">Hãng</th>
+                                <th class="p-2">Số Hiệu</th>
+                                <th class="p-2">Giờ Đi</th>
+                                <th class="p-2">Giờ Về</th>
+                                <th class="p-2">Lịch Bay</th>
+                                <th class="p-2">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="flight-list" class="divide-y divide-slate-700">
+                            <!-- Data populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Aircraft Config & Visualizer (1.2) -->
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+                <h2 class="text-lg font-bold border-b border-slate-700 pb-3">
+                    <i class="fa-solid fa-couch mr-2 text-indigo-400"></i>1.2 Sơ Đồ Ghế Tàu Bay
+                </h2>
+
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="text-slate-400">Dòng Máy Bay</label>
+                        <select id="cfg-plane-type" onchange="renderSeatVisualizer()" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white">
+                            <option value="A20N">Airbus A20N (2 Dãy Ghế)</option>
+                            <option value="A21N">Airbus A21N (2 Dãy Ghế)</option>
+                            <option value="A339">Airbus A339 (3 Dãy Ghế)</option>
+                            <option value="A35K">Airbus A35K (3 Dãy Ghế)</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-amber-400">Ghế F (First)</label><input id="cfg-f" type="number" value="0" class="w-full bg-slate-900 border p-1 rounded"></div>
+                        <div><label class="text-purple-400">Ghế C (Business)</label><input id="cfg-c" type="number" value="12" class="w-full bg-slate-900 border p-1 rounded"></div>
+                        <div><label class="text-cyan-400">Ghế W (Prem Eco)</label><input id="cfg-w" type="number" value="0" class="w-full bg-slate-900 border p-1 rounded"></div>
+                        <div><label class="text-blue-400">Ghế Y (Eco)</label><input id="cfg-y" type="number" value="180" class="w-full bg-slate-900 border p-1 rounded"></div>
+                    </div>
+
+                    <div>
+                        <label class="text-slate-400">Cấu hình Hàng Ghế (Ví dụ: 2-2 cho C, 3-3 cho Y)</label>
+                        <input id="cfg-str" type="text" value="3-3" class="w-full bg-slate-900 border border-slate-700 rounded p-2">
+                    </div>
+                </div>
+
+                <!-- Airplane Visual Canvas -->
+                <div class="plane-body p-4 flex flex-col items-center max-h-[350px] overflow-y-auto" id="plane-canvas">
+                    <!-- Seats rendered via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged, collection, setDoc, doc, onSnapshot, deleteDoc } from './config.js';
+
+        // Auth Logic
+        document.getElementById('btn-login').onclick = () => signInWithPopup(auth, googleProvider);
+        document.getElementById('btn-logout').onclick = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('btn-login').classList.add('hidden');
+                document.getElementById('user-profile').classList.remove('hidden');
+                document.getElementById('user-email').innerText = user.email;
+            } else {
+                document.getElementById('btn-login').classList.remove('hidden');
+                document.getElementById('user-profile').classList.add('hidden');
+            }
+        });
+
+        // Seat Map Visualizer Logic
+        window.renderSeatVisualizer = function() {
+            const planeType = document.getElementById('cfg-plane-type').value;
+            const canvas = document.getElementById('plane-canvas');
+            const isWideBody = (planeType === 'A339' || planeType === 'A35K');
+
+            let html = `<div class="text-[10px] text-slate-500 font-bold mb-3">ĐẦU TÀU BAY (COCKPIT)</div>`;
+            for (let row = 1; row <= 10; row++) {
+                html += `<div class="flex items-center gap-2 mb-1.5">`;
+                html += `<span class="text-[9px] w-3 text-slate-500">${row}</span>`;
+                if (!isWideBody) { // 2 dãy ghế (e.g. 3-3)
+                    html += `<div class="flex gap-1"><div class="w-5 h-5 seat-c rounded text-[9px] flex items-center justify-center font-bold">A</div><div class="w-5 h-5 seat-c rounded text-[9px] flex items-center justify-center font-bold">B</div><div class="w-5 h-5 seat-c rounded text-[9px] flex items-center justify-center font-bold">C</div></div>`;
+                    html += `<div class="w-3"></div>`; // Lối đi
+                    html += `<div class="flex gap-1"><div class="w-5 h-5 seat-y rounded text-[9px] flex items-center justify-center font-bold">D</div><div class="w-5 h-5 seat-y rounded text-[9px] flex items-center justify-center font-bold">E</div><div class="w-5 h-5 seat-y rounded text-[9px] flex items-center justify-center font-bold">F</div></div>`;
+                } else { // 3 dãy ghế (Thân rộng 3-3-3 hoặc 2-4-2)
+                    html += `<div class="flex gap-1"><div class="w-5 h-5 seat-f rounded text-[9px] flex items-center justify-center font-bold">A</div><div class="w-5 h-5 seat-f rounded text-[9px] flex items-center justify-center font-bold">B</div></div>`;
+                    html += `<div class="w-2"></div>`;
+                    html += `<div class="flex gap-1"><div class="w-5 h-5 seat-c rounded text-[9px] flex items-center justify-center font-bold">D</div><div class="w-5 h-5 seat-c rounded text-[9px] flex items-center justify-center font-bold">E</div><div class="w-5 h-5 seat-c rounded text-[9px] flex items-center justify-center font-bold">F</div><div class="w-5 h-5 seat-c rounded text-[9px] flex items-center justify-center font-bold">G</div></div>`;
+                    html += `<div class="w-2"></div>`;
+                    html += `<div class="flex gap-1"><div class="w-5 h-5 seat-f rounded text-[9px] flex items-center justify-center font-bold">J</div><div class="w-5 h-5 seat-f rounded text-[9px] flex items-center justify-center font-bold">K</div></div>`;
+                }
+                html += `</div>`;
+            }
+            canvas.innerHTML = html;
+        };
+
+        // Add Flight Form Submit
+        document.getElementById('form-add-flight').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = "FL_" + Date.now();
+            const days = Array.from(document.querySelectorAll('input[name="days"]:checked')).map(cb => cb.value);
+            
+            await setDoc(doc(db, "flights", id), {
+                airline: document.getElementById('fl-airline').value,
+                codeOutbound: document.getElementById('fl-code-out').value,
+                codeInbound: document.getElementById('fl-code-in').value,
+                depOutbound: document.getElementById('fl-dep-out').value,
+                arrOutbound: document.getElementById('fl-arr-out').value,
+                depInbound: document.getElementById('fl-dep-in').value,
+                arrInbound: document.getElementById('fl-arr-in').value,
+                config: document.getElementById('fl-config-select').value,
+                days: days
+            });
+            alert("Đã thêm chuyến bay mới!");
+        };
+
+        // Realtime Flight Table Sync
+        onSnapshot(collection(db, "flights"), (snapshot) => {
+            const tbody = document.getElementById('flight-list');
+            tbody.innerHTML = '';
+            document.getElementById('dash-total-flights').innerText = snapshot.docs.length + " Chuyến";
+
+            snapshot.docs.forEach(docSnap => {
+                const data = docSnap.data();
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-700/50">
+                        <td class="p-2 font-bold ${data.airline === 'FU' ? 'text-indigo-400' : 'text-pink-400'}">${data.airline}</td>
+                        <td class="p-2 font-mono">${data.codeOutbound} / ${data.codeInbound}</td>
+                        <td class="p-2">${data.depOutbound} - ${data.arrOutbound}</td>
+                        <td class="p-2">${data.depInbound} - ${data.arrInbound}</td>
+                        <td class="p-2">${data.days.join(',')}</td>
+                        <td class="p-2"><button onclick="deleteFlight('${docSnap.id}')" class="text-red-400 hover:underline">Xóa</button></td>
+                    </tr>
+                `;
+            });
+        });
+
+        window.deleteFlight = async (id) => {
+            if(confirm("Bạn có chắc chắn muốn xóa chuyến bay này?")) {
+                await deleteDoc(doc(db, "flights", id));
+            }
+        };
+
+        window.onload = () => renderSeatVisualizer();
+    </script>
+</body>
+</html>
