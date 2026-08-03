@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FUtech Sky - Phone Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Library Html5Qrcode -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Form Nhập Session ID để Kết Nối với PC Staff -->
+    <div id="box-connect" class="bg-slate-800 p-6 rounded-xl border border-slate-700 max-w-sm w-full text-center space-y-4">
+        <div class="bg-blue-600 font-black py-2 rounded text-xl">FUtech <span class="text-sky-400">SKY</span></div>
+        <h2 class="font-bold text-sm">Đồng Bộ Máy Quét Điện Thoại</h2>
+        <input id="input-session-id" type="text" placeholder="Nhập Session ID từ PC Staff..." class="w-full bg-slate-900 border border-slate-700 rounded p-3 text-center text-emerald-400 font-mono font-bold uppercase">
+        <button onclick="startSessionConnection()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded font-bold text-sm">
+            Kết Nối Máy Tính Staff
+        </button>
+    </div>
+
+    <!-- Màn Hình Chờ (Chỉ hiện Logo FUtech Sky & Camera TẮT) -->
+    <div id="box-idle" class="hidden bg-slate-800 p-8 rounded-2xl border border-sky-500/30 max-w-sm w-full text-center space-y-6 shadow-2xl">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-xl font-black text-2xl tracking-wider text-white shadow">
+            FUtech <span class="text-sky-300">SKY</span>
+        </div>
+        
+        <div id="idle-status" class="space-y-2">
+            <div class="w-4 h-4 bg-emerald-500 rounded-full mx-auto animate-ping"></div>
+            <p class="text-emerald-400 font-bold text-sm">ĐÃ KẾT NỐI SẮN SÀNG</p>
+            <p class="text-xs text-slate-400">Camera hiện đang TẮT. Khi máy tính Staff gửi yêu cầu quét, camera sẽ tự bật lên.</p>
+        </div>
+
+        <!-- Div Chứa Camera (Ban đầu ẩn) -->
+        <div id="reader-container" class="hidden overflow-hidden rounded-xl border-2 border-emerald-500">
+            <div id="reader" class="w-full"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, doc, updateDoc, onSnapshot } from './config.js';
+
+        let html5Qrcode = null;
+
+        window.startSessionConnection = function() {
+            const sid = document.getElementById('input-session-id').value.trim().toUpperCase();
+            if(!sid) return alert("Vui lòng nhập Session ID!");
+
+            // Đánh dấu trạng thái connected lên Firestore
+            updateDoc(doc(db, "sessions", sid), { connected: true });
+
+            document.getElementById('box-connect').classList.add('hidden');
+            document.getElementById('box-idle').classList.remove('hidden');
+
+            // Lắng nghe lệnh bật Camera từ Máy tính Nhân viên
+            onSnapshot(doc(db, "sessions", sid), (snap) => {
+                const data = snap.data();
+                if(data && data.triggerScan) {
+                    activateCameraScanner(sid, data.targetInput);
+                }
+            });
+        };
+
+        function activateCameraScanner(sessionId, targetInput) {
+            document.getElementById('reader-container').classList.remove('hidden');
+            document.getElementById('idle-status').classList.add('hidden');
+
+            html5Qrcode = new Html5Qrcode("reader");
+            html5Qrcode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 220, height: 220 } },
+                (decodedText) => {
+                    // Quét thành công QR Code
+                    updateDoc(doc(db, "sessions", sessionId), {
+                        triggerScan: false,
+                        scannedResult: decodedText
+                    });
+
+                    // TẮT CAMERA NGAY LẬP TỨC VỀ MÀN HÌNH CHỜ
+                    html5Qrcode.stop().then(() => {
+                        document.getElementById('reader-container').classList.add('hidden');
+                        document.getElementById('idle-status').classList.remove('hidden');
+                    });
+                },
+                (error) => { /* Bỏ qua lỗi khung hình */ }
+            );
+        }
+    </script>
+</body>
+</html>
