@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>FUtech Sky - Staff Check-in System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+    <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <div class="bg-blue-600 font-black px-3 py-1 rounded text-xl">FUtech <span class="text-sky-400">SKY</span></div>
+            <select id="airline-mode" class="bg-slate-900 border border-slate-700 rounded px-3 py-1 font-bold text-sky-400 text-sm">
+                <option value="ALL">🌐 Check-in Liên Minh (FUtech Sky)</option>
+                <option value="FU">✈️ Khai thác FUtech Airways (FU)</option>
+                <option value="5G">⚡ Khai thác pair (5G)</option>
+            </select>
+        </div>
+        
+        <!-- Tab Kết nối Máy quét Mobile -->
+        <div class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-lg flex items-center gap-3">
+            <span id="scanner-status-dot" class="w-3 h-3 bg-red-500 rounded-full"></span>
+            <span id="scanner-status-text" class="text-xs text-slate-400 font-bold">Chưa kết nối Phone Scanner</span>
+            <button onclick="openPairingModal()" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1 rounded font-bold">
+                <i class="fa-solid fa-qrcode mr-1"></i> Tạo Mã Kết Nối Mobile
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 1. Quét & Nhập Vé Handheld -->
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h2 class="font-bold text-sky-400"><i class="fa-solid fa-ticket mr-2"></i>1. Nhập Thông Tin Vé Sát Giờ</h2>
+                <button onclick="requestRemoteScan('TICKET')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded font-bold">
+                    <i class="fa-solid fa-camera mr-1"></i> Bật Phone Quét QR Vé
+                </button>
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400">Mã QR Vé Scanned</label>
+                <input id="pax-ticket-qr" type="text" readonly placeholder="Mã QR trên vé..." class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-emerald-400 font-mono font-bold text-sm">
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-slate-400">Họ và Tên Hành Khách</label>
+                    <input id="pax-name" type="text" placeholder="NGUYEN VAN A" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm uppercase">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400">Số CCCD / Hộ Chiếu</label>
+                    <input id="pax-id" type="text" placeholder="00109200..." class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400">Chọn Chuyến Bay Chặng SGN ⇌ HAN</label>
+                    <select id="pax-flight" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+                        <!-- Loaded dynamically -->
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Gửi & Dán Tag Hành Lý -->
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h2 class="font-bold text-amber-400"><i class="fa-solid fa-suitcase-rolling mr-2"></i>2. Xử Lý Tag Hành Lý</h2>
+                <button onclick="requestRemoteScan('BAGGAGE')" class="bg-amber-600 hover:bg-amber-500 text-xs px-3 py-1.5 rounded font-bold">
+                    <i class="fa-solid fa-camera mr-1"></i> Bật Phone Quét Tag
+                </button>
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400">Mã Tag Hành Lý Scanned</label>
+                <input id="baggage-qr" type="text" readonly placeholder="Mã QR trên tag hành lý..." class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-amber-400 font-mono font-bold text-sm">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs text-slate-400">Số Kiện Gửi</label>
+                    <input id="bag-count" type="number" value="1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400">Cân Nặng (Kg)</label>
+                    <input id="bag-weight" type="number" value="15.0" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+                </div>
+            </div>
+
+            <!-- Cảnh báo quy định riêng của hãng pair -->
+            <div id="pair-warning" class="p-3 bg-pink-950/60 border border-pink-700/50 rounded-lg text-xs text-pink-300">
+                <i class="fa-solid fa-circle-exclamation mr-1"></i> <b>Lưu ý hãng pair:</b> Áp dụng bắt buộc dán Tag nhận diện cho cả <b>Hành lý Xách tay</b>.
+            </div>
+
+            <button onclick="submitCheckin()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-3 rounded-lg font-bold text-white shadow-lg text-sm">
+                <i class="fa-solid fa-check mr-1"></i> HOÀN TẤT CHECK-IN & XUẤT DỮ LIỆU
+            </button>
+        </div>
+
+        <!-- Sơ đồ chọn ghế sát giờ -->
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+            <h2 class="font-bold text-slate-200 mb-3 border-b border-slate-700 pb-3">Chọn Ghế Còn Trống</h2>
+            <div id="seat-matrix" class="grid grid-cols-6 gap-2 max-h-[300px] overflow-y-auto">
+                <!-- Seats rendered here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Kết Nối Phone Scanner -->
+    <div id="pairing-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center">
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 max-w-sm w-full text-center space-y-4">
+            <h3 class="font-bold text-lg text-white">Kết Nối Điện Thoại Quét Mã QR</h3>
+            <p class="text-xs text-slate-400">Mở file <b class="text-emerald-400">scan.html</b> trên Điện thoại và nhập Mã Session bên dưới:</p>
+            <div class="bg-slate-900 p-4 rounded text-xl font-mono font-bold text-emerald-400 border border-slate-700" id="session-id-display">
+                ----
+            </div>
+            <button onclick="document.getElementById('pairing-modal').classList.add('hidden')" class="w-full bg-slate-700 py-2 rounded text-xs font-bold">Đóng</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, doc, setDoc, updateDoc, onSnapshot, collection } from './config.js';
+
+        let currentSessionId = null;
+
+        window.openPairingModal = function() {
+            currentSessionId = "SESSION_" + Math.random().toString(36).substring(2, 8).toUpperCase();
+            document.getElementById('session-id-display').innerText = currentSessionId;
+            document.getElementById('pairing-modal').classList.remove('hidden');
+
+            // Tạo session Firestore
+            setDoc(doc(db, "sessions", currentSessionId), {
+                connected: false,
+                triggerScan: false,
+                targetInput: null,
+                scannedResult: null
+            });
+
+            // Lắng nghe tín hiệu đồng bộ từ Scan.html
+            onSnapshot(doc(db, "sessions", currentSessionId), (snap) => {
+                const data = snap.data();
+                if(data) {
+                    if(data.connected) {
+                        document.getElementById('scanner-status-dot').className = "w-3 h-3 bg-emerald-500 rounded-full";
+                        document.getElementById('scanner-status-text').innerText = "Đã kết nối Điện thoại";
+                        document.getElementById('scanner-status-text').className = "text-xs text-emerald-400 font-bold";
+                    }
+                    if(data.scannedResult) {
+                        if(data.targetInput === 'TICKET') {
+                            document.getElementById('pax-ticket-qr').value = data.scannedResult;
+                        } else if(data.targetInput === 'BAGGAGE') {
+                            document.getElementById('baggage-qr').value = data.scannedResult;
+                        }
+                    }
+                }
+            });
+        };
+
+        window.requestRemoteScan = function(target) {
+            if(!currentSessionId) {
+                alert("Vui lòng bấm 'Tạo Mã Kết Nối Mobile' trước!");
+                return;
+            }
+            updateDoc(doc(db, "sessions", currentSessionId), {
+                triggerScan: true,
+                targetInput: target,
+                scannedResult: null
+            });
+        };
+
+        window.submitCheckin = function() {
+            const ticket = document.getElementById('pax-ticket-qr').value;
+            const pax = document.getElementById('pax-name').value;
+            if(!ticket || !pax) return alert("Vui lòng quét QR vé và điền Tên khách!");
+            alert(`✅ Đã Lưu Check-in cho khách: ${pax} (Vé QR: ${ticket})`);
+        };
+
+        // Render ghế trống chọn nhanh
+        const seatMatrix = document.getElementById('seat-matrix');
+        for(let i=1; i<=30; i++) {
+            seatMatrix.innerHTML += `<button onclick="this.classList.toggle('bg-emerald-600')" class="p-2 bg-slate-700 rounded text-xs font-bold">${i}A</button>`;
+        }
+
+        // Lấy danh sách chuyến bay từ Firestore
+        onSnapshot(collection(db, "flights"), (snap) => {
+            const select = document.getElementById('pax-flight');
+            select.innerHTML = '';
+            snap.docs.forEach(d => {
+                const f = d.data();
+                select.innerHTML += `<option value="${d.id}">[${f.airline}] ${f.codeOutbound} (${f.depOutbound} SGN - HAN)</option>`;
+            });
+        });
+    </script>
+</body>
+</html>
