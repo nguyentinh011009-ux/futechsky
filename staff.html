@@ -2,131 +2,497 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>FUtech Sky - Staff Check-in System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FUtech Sky - Staff Check-in Control</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .seat-btn { transition: all 0.15s ease-in-out; }
+        .seat-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen">
-    <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-4">
-            <div class="bg-blue-600 font-black px-3 py-1 rounded text-xl">FUtech <span class="text-sky-400">SKY</span></div>
-            <select id="airline-mode" class="bg-slate-900 border border-slate-700 rounded px-3 py-1 font-bold text-sky-400 text-sm">
-                <option value="ALL">🌐 Check-in Liên Minh (FUtech Sky)</option>
-                <option value="FU">✈️ Khai thác FUtech Airways (FU)</option>
-                <option value="5G">⚡ Khai thác pair (5G)</option>
-            </select>
-        </div>
-        
-        <!-- Tab Kết nối Máy quét Mobile -->
-        <div class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-lg flex items-center gap-3">
-            <span id="scanner-status-dot" class="w-3 h-3 bg-red-500 rounded-full"></span>
-            <span id="scanner-status-text" class="text-xs text-slate-400 font-bold">Chưa kết nối Phone Scanner</span>
-            <button onclick="openPairingModal()" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-1 rounded font-bold">
-                <i class="fa-solid fa-qrcode mr-1"></i> Tạo Mã Kết Nối Mobile
-            </button>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo & Work Mode -->
+                <div class="flex items-center gap-4">
+                    <div class="bg-indigo-600 text-white font-black px-3 py-1.5 rounded-lg text-lg tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-plane-arrival"></i> FUtech <span class="text-sky-300">SKY</span>
+                    </div>
+
+                    <!-- Chọn Hãng Hàng Không Làm Việc -->
+                    <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                        <span class="text-xs text-slate-500 font-semibold pl-2"><i class="fa-solid fa-building-flag mr-1"></i>Hãng làm việc:</span>
+                        <select id="airline-mode" onchange="filterFlightsByAirline()" class="bg-white border border-slate-300 rounded-md px-3 py-1 font-bold text-indigo-700 text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="ALL">🌐 Liên Minh Check-in (FUtech Sky)</option>
+                            <option value="FU">✈️ FUtech Airways (FU)</option>
+                            <option value="5G">⚡ Hãng đối tác pair (5G)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Trạng Thái Kết Nối Mobile Scanner -->
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
+                        <span id="scanner-status-dot" class="w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse"></span>
+                        <span id="scanner-status-text" class="text-xs font-bold text-slate-500">Chưa kết nối Mobile Scanner</span>
+                    </div>
+                    <button onclick="switchTab('pairing')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-2 rounded-lg font-bold transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-qrcode"></i> Mã Kết Nối Scanner
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Navigation Header -->
+            <div class="flex space-x-8 border-t border-slate-100">
+                <button onclick="switchTab('checkin')" id="tab-btn-checkin" class="tab-btn py-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2">
+                    <i class="fa-solid fa-passport"></i> 1. Quy Trình Check-in & Chọn Ghế
+                </button>
+                <button onclick="switchTab('guide')" id="tab-btn-guide" class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> 2. Hướng Dẫn Thao Tác Staff
+                </button>
+                <button onclick="switchTab('pairing')" id="tab-btn-pairing" class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-mobile-screen-button"></i> 3. Kết Nối Mobile Scanner
+                </button>
+            </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- 1. Quét & Nhập Vé Handheld -->
-        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                <h2 class="font-bold text-sky-400"><i class="fa-solid fa-ticket mr-2"></i>1. Nhập Thông Tin Vé Sát Giờ</h2>
-                <button onclick="requestRemoteScan('TICKET')" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-3 py-1.5 rounded font-bold">
-                    <i class="fa-solid fa-camera mr-1"></i> Bật Phone Quét QR Vé
-                </button>
-            </div>
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
 
-            <div>
-                <label class="text-xs text-slate-400">Mã QR Vé Scanned</label>
-                <input id="pax-ticket-qr" type="text" readonly placeholder="Mã QR trên vé..." class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-emerald-400 font-mono font-bold text-sm">
-            </div>
+        <!-- ================= TAB 1: QUY TRÌNH CHECK-IN ================= -->
+        <section id="tab-checkin" class="tab-content space-y-6">
 
-            <div class="space-y-3">
-                <div>
-                    <label class="text-xs text-slate-400">Họ và Tên Hành Khách</label>
-                    <input id="pax-name" type="text" placeholder="NGUYEN VAN A" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm uppercase">
+            <!-- Thông tin Chuyến Bay & Tự Động Chọn Giờ Bay -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-md-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-plane-departure"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block">Chuyến bay SGN ⇌ HAN</span>
+                        <select id="pax-flight" onchange="onFlightSelected()" class="font-bold text-slate-900 text-base bg-slate-50 border border-slate-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label class="text-xs text-slate-400">Số CCCD / Hộ Chiếu</label>
-                    <input id="pax-id" type="text" placeholder="00109200..." class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400">Chọn Chuyến Bay Chặng SGN ⇌ HAN</label>
-                    <select id="pax-flight" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
-                        <!-- Loaded dynamically -->
-                    </select>
-                </div>
-            </div>
-        </div>
 
-        <!-- 2. Gửi & Dán Tag Hành Lý -->
-        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                <h2 class="font-bold text-amber-400"><i class="fa-solid fa-suitcase-rolling mr-2"></i>2. Xử Lý Tag Hành Lý</h2>
-                <button onclick="requestRemoteScan('BAGGAGE')" class="bg-amber-600 hover:bg-amber-500 text-xs px-3 py-1.5 rounded font-bold">
-                    <i class="fa-solid fa-camera mr-1"></i> Bật Phone Quét Tag
-                </button>
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400">Mã Tag Hành Lý Scanned</label>
-                <input id="baggage-qr" type="text" readonly placeholder="Mã QR trên tag hành lý..." class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-amber-400 font-mono font-bold text-sm">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs text-slate-400">Số Kiện Gửi</label>
-                    <input id="bag-count" type="number" value="1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400">Cân Nặng (Kg)</label>
-                    <input id="bag-weight" type="number" value="15.0" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm">
+                <div class="flex items-center gap-4 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                    <div>
+                        <span class="text-slate-400 block">Thời gian hiện tại</span>
+                        <span id="current-time-display" class="font-mono font-bold text-slate-800 text-sm">--:--:--</span>
+                    </div>
+                    <div class="h-6 w-px bg-slate-200"></div>
+                    <div>
+                        <span class="text-slate-400 block">Chế độ chọn chuyến</span>
+                        <span id="auto-flight-status" class="font-bold text-emerald-600"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Tự chọn chuyến gần nhất</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Cảnh báo quy định riêng của hãng pair -->
-            <div id="pair-warning" class="p-3 bg-pink-950/60 border border-pink-700/50 rounded-lg text-xs text-pink-300">
-                <i class="fa-solid fa-circle-exclamation mr-1"></i> <b>Lưu ý hãng pair:</b> Áp dụng bắt buộc dán Tag nhận diện cho cả <b>Hành lý Xách tay</b>.
-            </div>
+            <!-- Layout 2 cột: Form Check-in & Sơ đồ ghế -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-            <button onclick="submitCheckin()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-3 rounded-lg font-bold text-white shadow-lg text-sm">
-                <i class="fa-solid fa-check mr-1"></i> HOÀN TẤT CHECK-IN & XUẤT DỮ LIỆU
-            </button>
-        </div>
+                <!-- Cột Trái (7 cols): Thao tác Quét Vé, Khách & Hành lý -->
+                <div class="lg:col-span-7 space-y-5">
 
-        <!-- Sơ đồ chọn ghế sát giờ -->
-        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
-            <h2 class="font-bold text-slate-200 mb-3 border-b border-slate-700 pb-3">Chọn Ghế Còn Trống</h2>
-            <div id="seat-matrix" class="grid grid-cols-6 gap-2 max-h-[300px] overflow-y-auto">
-                <!-- Seats rendered here -->
+                    <!-- Bước 1: Thông tin Vé & Hành Khách -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                            <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">1</span>
+                                Quét Vé & Nhập Thông Tin Hành Khách
+                            </h2>
+                            <button onclick="requestRemoteScan('TICKET')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-camera"></i> Quét QR Vé từ Mobile
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            <div class="md:col-span-2">
+                                <label class="font-bold text-slate-700 mb-1 block">Mã Vé / QR Code Scanned</label>
+                                <div class="relative">
+                                    <input id="pax-ticket-qr" type="text" placeholder="Quét mã QR hoặc nhập tay..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 font-mono font-bold text-indigo-600 pr-10 focus:ring-2 focus:ring-indigo-500 outline-none">
+                                    <i class="fa-solid fa-qrcode absolute right-3 top-3 text-slate-400 text-sm"></i>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="font-semibold text-slate-700 mb-1 block">Họ và Tên Hành Khách (*)</label>
+                                <input id="pax-name" type="text" placeholder="NGUYEN VAN A" uppercase required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 font-bold uppercase focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+
+                            <div>
+                                <label class="font-semibold text-slate-700 mb-1 block">Số CCCD / Hộ Chiếu (*)</label>
+                                <input id="pax-id" type="text" placeholder="00109200xxxx" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 font-mono focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+
+                            <div>
+                                <label class="font-semibold text-slate-700 mb-1 block">Quốc Tịch</label>
+                                <input id="pax-nationality" type="text" value="VIETNAM" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 uppercase font-semibold">
+                            </div>
+
+                            <div>
+                                <label class="font-semibold text-slate-700 mb-1 block">Loại Hành Khách / Giới Tính</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <select id="pax-type" class="bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                                        <option value="ADT">Người lớn (ADT)</option>
+                                        <option value="CHD">Trẻ em (CHD)</option>
+                                        <option value="INF">Em bé (INF)</option>
+                                    </select>
+                                    <select id="pax-gender" class="bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                                        <option value="MALE">Nam</option>
+                                        <option value="FEMALE">Nữ</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bước 2: Xử Lý Hành Lý Ký Gửi & Xách Tay -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                            <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-black">2</span>
+                                Quét & Dán Tag Hành Lý
+                            </h2>
+                            <button onclick="requestRemoteScan('BAGGAGE')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-camera"></i> Quét Tag Hành Lý từ Mobile
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                            <div>
+                                <label class="font-semibold text-slate-700 mb-1 block">Mã Tag Hành Lý</label>
+                                <input id="baggage-qr" type="text" readonly placeholder="Mã QR trên Tag..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-bold text-amber-600">
+                            </div>
+                            <div>
+                                <label class="font-semibold text-slate-700 mb-1 block">Số Kiện Ký Gửi</label>
+                                <input id="bag-count" type="number" min="0" value="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-center font-bold">
+                            </div>
+                            <div>
+                                <label class="font-semibold text-slate-700 mb-1 block">Trọng Lượng (Kg)</label>
+                                <input id="bag-weight" type="number" min="0" step="0.5" value="0.0" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-center font-bold">
+                            </div>
+                        </div>
+
+                        <!-- Cảnh báo quy định hãng pair -->
+                        <div id="pair-warning" class="hidden p-3 bg-pink-50 border border-pink-200 rounded-lg text-xs text-pink-700 flex items-start gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-pink-500 text-sm mt-0.5"></i>
+                            <div>
+                                <p class="font-bold">Quy định bắt buộc hãng pair (5G):</p>
+                                <p class="text-[11px]">Bắt buộc phải cân và dán **Tag nhận diện Hành lý Xách tay** trước khi hành khách qua cửa An ninh soi chiếu.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nút Hoàn Tất Check-in -->
+                    <button onclick="submitCheckin()" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-check text-lg"></i> HOÀN TẤT CHECK-IN & XUẤT DỮ LIỆU THẺ
+                    </button>
+
+                </div>
+
+                <!-- Cột Phải (5 cols): Sơ Đồ Chọn Ghế Sát Giờ -->
+                <div class="lg:col-span-5 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 flex flex-col">
+                    <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+                        <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black">3</span>
+                            Chọn Ghế Sát Giờ
+                        </h2>
+                        <span id="selected-seat-badge" class="bg-indigo-100 text-indigo-700 font-extrabold text-xs px-2.5 py-1 rounded-md border border-indigo-200">
+                            Chưa chọn ghế
+                        </span>
+                    </div>
+
+                    <div class="flex justify-between items-center text-[10px] font-bold px-2 py-1 bg-slate-50 rounded border">
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-xs bg-slate-200 border inline-block"></span> Trống</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-xs bg-indigo-600 inline-block"></span> Đã chọn</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-xs bg-rose-500 inline-block"></span> Đã check-in</span>
+                    </div>
+
+                    <!-- Ma Trận Ghế -->
+                    <div id="seat-matrix" class="flex-1 bg-slate-50 p-4 rounded-xl border border-slate-200 min-h-[360px] max-h-[480px] overflow-y-auto flex flex-col items-center">
+                        <p class="text-xs text-slate-400 mt-10">Đang tải sơ đồ ghế của chuyến bay...</p>
+                    </div>
+                </div>
+
             </div>
-        </div>
+        </section>
+
+        <!-- ================= TAB 2: HƯỚNG DẪN THAO TÁC STAFF ================= -->
+        <section id="tab-guide" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                <div class="border-b border-slate-100 pb-4">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-book-bookmark text-indigo-600"></i>
+                        Quy Trình Chuẩn Bán Vé & Check-in Mặt Đất
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">Dành cho nhân viên đại lý và nhân viên thủ tục hàng không FUtech Sky Alliance</p>
+                </div>
+
+                <!-- Lưu ý về Giá vé -->
+                <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
+                    <h3 class="font-bold text-amber-800 text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info text-amber-600"></i> LƯU Ý VỀ GIÁ VÉ & HÓA ĐƠN:
+                    </h3>
+                    <p class="text-xs text-amber-900 leading-relaxed">
+                        Hệ thống **Check-in Control** chỉ phục vụ công tác làm thủ tục, kiểm soát hành lý và cấp chỗ ngồi sát giờ.
+                        <b>Giá vé, phí phụ thu và phiếu thu tiền</b> sẽ được xuất trực tiếp từ hệ thống Đặt chỗ Bán vé (PSS) riêng biệt của từng hãng.
+                    </p>
+                </div>
+
+                <!-- Các bước thao tác -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                        <div class="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm">1</div>
+                        <h4 class="font-bold text-slate-800 text-sm">Quét Vé & Điền Thông Tin</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Sử dụng Điện thoại (Mobile Scanner) quét mã QR trên phôi vé in sẵn.
+                            Sau khi lưu thông tin vào hệ thống, Staff **dùng bút ghi rõ Họ tên, Số ghế, Giờ boarding** trực tiếp lên phôi vé giấy cho khách.
+                        </p>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                        <div class="w-8 h-8 rounded-full bg-amber-500 text-white font-bold flex items-center justify-center text-sm">2</div>
+                        <h4 class="font-bold text-slate-800 text-sm">Dán Tag Hành Lý</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Quét mã QR trên Tag hành lý đã in sẵn. Nhập số kiện và cân nặng.
+                            Dán thẻ Tag vào hành lý ký gửi.
+                        </p>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                        <div class="w-8 h-8 rounded-full bg-pink-500 text-white font-bold flex items-center justify-center text-sm">3</div>
+                        <h4 class="font-bold text-slate-800 text-sm">Đặc Thù Hãng pair (5G)</h4>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Khi chọn làm việc hãng **pair (5G)**, nhân viên **bắt buộc dán Tag nhận diện Xách tay** cho toàn bộ hành lý cabin của khách trước khi vào soi chiếu.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: KẾT NỐI MOBILE SCANNER ================= -->
+        <section id="tab-pairing" class="tab-content hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-xl mx-auto text-center space-y-5">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Kết Nối Máy Quét Mã QR Qua Điện Thoại</h2>
+                    <p class="text-xs text-slate-500 mt-1">Biến điện thoại của bạn thành đầu quét mã QR cầm tay tiện lợi</p>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-3">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Mã Session Kết Nối</span>
+                    <div id="session-code-display" class="text-3xl font-mono font-black text-indigo-600 tracking-widest">
+                        ------
+                    </div>
+                    <button onclick="generatePairingSession()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 font-bold px-3 py-1.5 rounded-lg transition">
+                        <i class="fa-solid fa-arrows-rotate mr-1"></i> Tạo Mã Session Mới
+                    </button>
+                </div>
+
+                <div class="text-left text-xs text-slate-600 space-y-2 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                    <p class="font-bold text-indigo-900 mb-1"><i class="fa-solid fa-mobile-screen mr-1"></i> Hướng dẫn kết nối trên Điện thoại:</p>
+                    <ol class="list-decimal list-inside space-y-1">
+                        <li>Mở trình duyệt trên điện thoại và truy cập file <b class="text-indigo-700">scan.html</b>.</li>
+                        <li>Nhập đúng **Mã Session** hiển thị ở trên.</li>
+                        <li>Màn hình điện thoại sẽ chuyển sang trạng thái **Chờ lệnh quét** (Logo FUtech Sky). Camera sẽ tự bật khi máy tính yêu cầu quét mã.</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <!-- Modal Kết Nối Phone Scanner -->
-    <div id="pairing-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center">
-        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 max-w-sm w-full text-center space-y-4">
-            <h3 class="font-bold text-lg text-white">Kết Nối Điện Thoại Quét Mã QR</h3>
-            <p class="text-xs text-slate-400">Mở file <b class="text-emerald-400">scan.html</b> trên Điện thoại và nhập Mã Session bên dưới:</p>
-            <div class="bg-slate-900 p-4 rounded text-xl font-mono font-bold text-emerald-400 border border-slate-700" id="session-id-display">
-                ----
-            </div>
-            <button onclick="document.getElementById('pairing-modal').classList.add('hidden')" class="w-full bg-slate-700 py-2 rounded text-xs font-bold">Đóng</button>
-        </div>
-    </div>
-
+    <!-- Logic Script Module -->
     <script type="module">
-        import { db, doc, setDoc, updateDoc, onSnapshot, collection } from './config.js';
+        import { db, doc, setDoc, updateDoc, onSnapshot, collection, getDocs, query, where } from './config.js';
 
+        // State Global
         let currentSessionId = null;
+        let selectedSeatNumber = null;
+        let flightsList = [];
+        let seatConfigs = [];
+        let checkedInSeats = [];
 
-        window.openPairingModal = function() {
-            currentSessionId = "SESSION_" + Math.random().toString(36).substring(2, 8).toUpperCase();
-            document.getElementById('session-id-display').innerText = currentSessionId;
-            document.getElementById('pairing-modal').classList.remove('hidden');
+        // Tab Switcher
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-600', 'text-indigo-600', 'font-bold');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            });
 
-            // Tạo session Firestore
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            activeBtn.classList.add('border-indigo-600', 'text-indigo-600', 'font-bold');
+            activeBtn.classList.remove('border-transparent', 'text-slate-500');
+        };
+
+        // Realtime Clock Display & Auto Flight Picker Timer
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('current-time-display').innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
+
+        // Fetch Flights & Seat Configs from Firestore
+        async function loadInitialData() {
+            // Load Configurations
+            const cfgSnap = await getDocs(collection(db, "seat_configs"));
+            seatConfigs = cfgSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            // Listen Realtime Flights
+            onSnapshot(collection(db, "flights"), (snapshot) => {
+                flightsList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                filterFlightsByAirline();
+            });
+        }
+
+        // Lọc chuyến bay theo Hãng làm việc & Tự động chọn chuyến gần nhất
+        window.filterFlightsByAirline = function() {
+            const mode = document.getElementById('airline-mode').value;
+            const select = document.getElementById('pax-flight');
+            select.innerHTML = '';
+
+            const filtered = flightsList.filter(f => mode === 'ALL' || f.airline === mode);
+
+            if (filtered.length === 0) {
+                select.innerHTML = '<option value="">(Không có chuyến bay nào)</option>';
+                document.getElementById('seat-matrix').innerHTML = '<p class="text-xs text-slate-400 mt-10">Không có chuyến bay phù hợp</p>';
+                return;
+            }
+
+            filtered.forEach(f => {
+                select.innerHTML += `<option value="${f.id}">[${f.airline}] ${f.codeOutbound} (${f.depOutbound} SGN - HAN)</option>`;
+            });
+
+            // Tự động tìm chuyến bay gần nhất với thời gian hiện tại
+            const closestFlight = findClosestFlight(filtered);
+            if (closestFlight) {
+                select.value = closestFlight.id;
+            }
+
+            // Hiển thị/Ẩn Cảnh báo hãng pair
+            const selectedFlightObj = filtered.find(f => f.id === select.value);
+            if (selectedFlightObj && selectedFlightObj.airline === '5G') {
+                document.getElementById('pair-warning').classList.remove('hidden');
+            } else {
+                document.getElementById('pair-warning').classList.add('hidden');
+            }
+
+            onFlightSelected();
+        };
+
+        // Thuật toán chọn chuyến bay gần giờ hiện tại nhất
+        function findClosestFlight(flights) {
+            if (!flights || flights.length === 0) return null;
+
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            let closest = null;
+            let minDiff = Infinity;
+
+            flights.forEach(f => {
+                if (f.depOutbound) {
+                    const [h, m] = f.depOutbound.split(':').map(Number);
+                    const flightMinutes = h * 60 + m;
+                    const diff = Math.abs(flightMinutes - currentMinutes);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closest = f;
+                    }
+                }
+            });
+
+            return closest || flights[0];
+        }
+
+        // Khi người dùng đổi chuyến bay trên dropdown
+        window.onFlightSelected = async function() {
+            selectedSeatNumber = null;
+            document.getElementById('selected-seat-badge').innerText = "Chưa chọn ghế";
+            document.getElementById('selected-seat-badge').className = "bg-indigo-100 text-indigo-700 font-extrabold text-xs px-2.5 py-1 rounded-md border border-indigo-200";
+
+            const flightId = document.getElementById('pax-flight').value;
+            const flight = flightsList.find(f => f.id === flightId);
+
+            if (!flight) return;
+
+            // Cập nhật cảnh báo pair
+            if (flight.airline === '5G') {
+                document.getElementById('pair-warning').classList.remove('hidden');
+            } else {
+                document.getElementById('pair-warning').classList.add('hidden');
+            }
+
+            // Tải danh sách ghế đã check-in từ Firestore
+            const checkinsSnap = await getDocs(query(collection(db, "checkins"), where("flightId", "==", flightId)));
+            checkedInSeats = checkinsSnap.docs.map(d => d.data().seatNumber);
+
+            // Render ma trận ghế
+            renderSeatMatrix(flight.configId);
+        };
+
+        // Render Sơ Đồ Chọn Ghế Sát Giờ
+        function renderSeatMatrix(configId) {
+            const matrixContainer = document.getElementById('seat-matrix');
+            const config = seatConfigs.find(c => c.id === configId);
+
+            if (!config) {
+                matrixContainer.innerHTML = '<p class="text-xs text-rose-500 mt-10">Chuyến bay chưa gắn cấu hình ghế!</p>';
+                return;
+            }
+
+            const totalSeats = Number(config.fSeats || 0) + Number(config.cSeats || 0) + Number(config.wSeats || 0) + Number(config.ySeats || 0);
+            
+            let html = `<div class="grid grid-cols-6 gap-2 w-full max-w-xs">`;
+
+            for (let i = 1; i <= totalSeats; i++) {
+                const seatNum = `${i}A`; // Đánh số đơn giản cho mẫu
+                const isOccupied = checkedInSeats.includes(seatNum);
+
+                if (isOccupied) {
+                    html += `<button disabled class="seat-btn py-2 bg-rose-500 text-white rounded text-xs font-bold shadow-xs">${seatNum}</button>`;
+                } else {
+                    html += `<button onclick="selectSeat('${seatNum}', this)" class="seat-btn py-2 bg-white border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-700 rounded text-xs font-bold shadow-xs">${seatNum}</button>`;
+                }
+            }
+
+            html += `</div>`;
+            matrixContainer.innerHTML = html;
+        }
+
+        // Chọn Ghế
+        window.selectSeat = function(seatNum, btnEl) {
+            // Unselect previous
+            document.querySelectorAll('#seat-matrix button').forEach(b => {
+                if (!b.disabled) {
+                    b.className = "seat-btn py-2 bg-white border border-slate-300 hover:border-indigo-600 hover:text-indigo-600 text-slate-700 rounded text-xs font-bold shadow-xs";
+                }
+            });
+
+            btnEl.className = "seat-btn py-2 bg-indigo-600 text-white rounded text-xs font-bold shadow-md ring-2 ring-indigo-300";
+            selectedSeatNumber = seatNum;
+
+            document.getElementById('selected-seat-badge').innerText = `Ghế đã chọn: ${seatNum}`;
+            document.getElementById('selected-seat-badge').className = "bg-emerald-100 text-emerald-800 font-extrabold text-xs px-2.5 py-1 rounded-md border border-emerald-300";
+        };
+
+        // Mobile Scanner Session Generation & Sync
+        window.generatePairingSession = function() {
+            currentSessionId = "SES_" + Math.random().toString(36).substring(2, 8).toUpperCase();
+            document.getElementById('session-code-display').innerText = currentSessionId;
+
             setDoc(doc(db, "sessions", currentSessionId), {
                 connected: false,
                 triggerScan: false,
@@ -134,19 +500,24 @@
                 scannedResult: null
             });
 
-            // Lắng nghe tín hiệu đồng bộ từ Scan.html
+            // Listen Sync Signal from scan.html
             onSnapshot(doc(db, "sessions", currentSessionId), (snap) => {
                 const data = snap.data();
-                if(data) {
-                    if(data.connected) {
-                        document.getElementById('scanner-status-dot').className = "w-3 h-3 bg-emerald-500 rounded-full";
-                        document.getElementById('scanner-status-text').innerText = "Đã kết nối Điện thoại";
-                        document.getElementById('scanner-status-text').className = "text-xs text-emerald-400 font-bold";
+                if (data) {
+                    if (data.connected) {
+                        document.getElementById('scanner-status-dot').className = "w-2.5 h-2.5 bg-emerald-500 rounded-full";
+                        document.getElementById('scanner-status-text').innerText = "Đã kết nối Mobile Scanner";
+                        document.getElementById('scanner-status-text').className = "text-xs font-bold text-emerald-600";
+                    } else {
+                        document.getElementById('scanner-status-dot').className = "w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse";
+                        document.getElementById('scanner-status-text').innerText = "Chưa kết nối Mobile Scanner";
+                        document.getElementById('scanner-status-text').className = "text-xs font-bold text-slate-500";
                     }
-                    if(data.scannedResult) {
-                        if(data.targetInput === 'TICKET') {
+
+                    if (data.scannedResult) {
+                        if (data.targetInput === 'TICKET') {
                             document.getElementById('pax-ticket-qr').value = data.scannedResult;
-                        } else if(data.targetInput === 'BAGGAGE') {
+                        } else if (data.targetInput === 'BAGGAGE') {
                             document.getElementById('baggage-qr').value = data.scannedResult;
                         }
                     }
@@ -154,9 +525,11 @@
             });
         };
 
+        // Trigger Mobile Scanner Remote
         window.requestRemoteScan = function(target) {
-            if(!currentSessionId) {
-                alert("Vui lòng bấm 'Tạo Mã Kết Nối Mobile' trước!");
+            if (!currentSessionId) {
+                alert("Vui lòng vào Tab 3 để tạo mã kết nối Mobile Scanner trước!");
+                switchTab('pairing');
                 return;
             }
             updateDoc(doc(db, "sessions", currentSessionId), {
@@ -164,30 +537,60 @@
                 targetInput: target,
                 scannedResult: null
             });
+            alert(`Đã gửi lệnh bật Camera trên Điện thoại để quét ${target === 'TICKET' ? 'Vé' : 'Tag Hành lý'}!`);
         };
 
-        window.submitCheckin = function() {
+        // Submit Check-in
+        window.submitCheckin = async function() {
             const ticket = document.getElementById('pax-ticket-qr').value;
-            const pax = document.getElementById('pax-name').value;
-            if(!ticket || !pax) return alert("Vui lòng quét QR vé và điền Tên khách!");
-            alert(`✅ Đã Lưu Check-in cho khách: ${pax} (Vé QR: ${ticket})`);
+            const paxName = document.getElementById('pax-name').value;
+            const paxId = document.getElementById('pax-id').value;
+            const flightId = document.getElementById('pax-flight').value;
+
+            if (!ticket || !paxName || !paxId) {
+                alert("Vui lòng nhập/quét đầy đủ Mã vé, Họ tên và Số CCCD!");
+                return;
+            }
+
+            if (!selectedSeatNumber) {
+                alert("Vui lòng chọn ghế trống cho khách trên ma trận ghế!");
+                return;
+            }
+
+            const checkinData = {
+                ticketQr: ticket,
+                paxName: paxName.toUpperCase(),
+                paxId: paxId,
+                nationality: document.getElementById('pax-nationality').value,
+                paxType: document.getElementById('pax-type').value,
+                gender: document.getElementById('pax-gender').value,
+                flightId: flightId,
+                seatNumber: selectedSeatNumber,
+                baggageQr: document.getElementById('baggage-qr').value || 'NONE',
+                bagCount: Number(document.getElementById('bag-count').value),
+                bagWeight: Number(document.getElementById('bag-weight').value),
+                createdAt: new Date().toISOString()
+            };
+
+            await setDoc(doc(db, "checkins", "CHK_" + Date.now()), checkinData);
+
+            alert(`✅ CHECK-IN THÀNH CÔNG!\n\nKhách: ${paxName}\nSố ghế: ${selectedSeatNumber}\nHãy ghi số ghế này lên phôi vé giấy cho hành khách.`);
+            
+            // Reset Form
+            document.getElementById('pax-ticket-qr').value = '';
+            document.getElementById('pax-name').value = '';
+            document.getElementById('pax-id').value = '';
+            document.getElementById('baggage-qr').value = '';
+            document.getElementById('bag-count').value = '0';
+            document.getElementById('bag-weight').value = '0.0';
+            onFlightSelected();
         };
 
-        // Render ghế trống chọn nhanh
-        const seatMatrix = document.getElementById('seat-matrix');
-        for(let i=1; i<=30; i++) {
-            seatMatrix.innerHTML += `<button onclick="this.classList.toggle('bg-emerald-600')" class="p-2 bg-slate-700 rounded text-xs font-bold">${i}A</button>`;
-        }
-
-        // Lấy danh sách chuyến bay từ Firestore
-        onSnapshot(collection(db, "flights"), (snap) => {
-            const select = document.getElementById('pax-flight');
-            select.innerHTML = '';
-            snap.docs.forEach(d => {
-                const f = d.data();
-                select.innerHTML += `<option value="${d.id}">[${f.airline}] ${f.codeOutbound} (${f.depOutbound} SGN - HAN)</option>`;
-            });
-        });
+        // Init Onload
+        window.onload = () => {
+            loadInitialData();
+            generatePairingSession();
+        };
     </script>
 </body>
 </html>
